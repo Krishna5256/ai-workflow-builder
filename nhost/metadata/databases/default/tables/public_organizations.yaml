@@ -1,0 +1,33 @@
+table:
+  name: organizations
+  schema: public
+array_relationships:
+- name: org_members
+  using:
+    foreign_key_constraint_on:
+      column: org_id
+      table:
+        name: org_members
+        schema: public
+- name: workflows
+  using:
+    foreign_key_constraint_on:
+      column: org_id
+      table:
+        name: workflows
+        schema: public
+select_permissions:
+- role: user
+  permission:
+    columns:
+    - quota_allowed
+    - quota_used
+    - name
+    - created_at
+    - quota_period_start
+    - id
+    filter:
+      org_members:
+        user_id:
+          _eq: ''
+  comment: ''

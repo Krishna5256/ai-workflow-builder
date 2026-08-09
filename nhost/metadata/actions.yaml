@@ -1,0 +1,75 @@
+actions:
+- name: approveStep
+  definition:
+    handler: https://lxurpouvxelcvrbqpbxk.functions.eu-central-1.nhost.run/v1/approveStep
+    output_type: ApprovalResult
+    ignored_client_headers:
+    - Content-Length
+    - Content-MD5
+    - User-Agent
+    - Host
+    - Origin
+    - Referer
+    - Accept
+    - Accept-Encoding
+    - Accept-Language
+    - Accept-Datetime
+    - Cache-Control
+    - Connection
+    - DNT
+    - Content-Type
+    arguments:
+    - name: step_run_id
+      type: uuid!
+    type: mutation
+    kind: synchronous
+  comment: approveStep
+  permissions:
+  - role: user
+- name: triggerWorkflowRun
+  definition:
+    handler: https://lxurpouvxelcvrbqpbxk.functions.eu-central-1.nhost.run/v1/triggerWorkflowRun
+    output_type: WorkflowRunResult
+    ignored_client_headers:
+    - Content-Length
+    - Content-MD5
+    - User-Agent
+    - Host
+    - Origin
+    - Referer
+    - Accept
+    - Accept-Encoding
+    - Accept-Language
+    - Accept-Datetime
+    - Cache-Control
+    - Connection
+    - DNT
+    - Content-Type
+    arguments:
+    - name: workflow_id
+      type: uuid!
+    type: mutation
+    kind: synchronous
+  comment: triggerWorkflowRun
+  permissions:
+  - role: user
+custom_types:
+  objects:
+  - name: WorkflowRunResult
+    fields:
+    - name: workflow_run_id
+      type: uuid!
+    - name: status
+      type: String!
+    - name: awaiting_approval
+      type: uuid
+    - name: message
+      type: String
+  - name: ApprovalResult
+    fields:
+    - name: workflow_run_id
+      type: uuid!
+    - name: status
+      type: String!
+    - name: message
+      type: String

@@ -1,0 +1,61 @@
+table:
+  name: workflow_triggers
+  schema: public
+object_relationships:
+- name: workflow
+  using:
+    foreign_key_constraint_on: workflow_id
+insert_permissions:
+- role: user
+  permission:
+    check:
+      workflow:
+        organization:
+          org_members:
+            user_id:
+              _eq: X-Hasura-User-Id
+    columns:
+    - config
+    - type
+    - workflow_id
+  comment: ''
+select_permissions:
+- role: user
+  permission:
+    columns:
+    - config
+    - type
+    - created_at
+    - id
+    - workflow_id
+    filter:
+      workflow:
+        organization:
+          org_members:
+            user_id:
+              _eq: X-Hasura-User-Id
+  comment: ''
+update_permissions:
+- role: user
+  permission:
+    columns:
+    - config
+    - type
+    filter:
+      workflow:
+        organization:
+          org_members:
+            user_id:
+              _eq: X-Hasura-User-Id
+    check: null
+  comment: ''
+delete_permissions:
+- role: user
+  permission:
+    filter:
+      workflow:
+        organization:
+          org_members:
+            user_id:
+              _eq: X-Hasura-User-Id
+  comment: ''
