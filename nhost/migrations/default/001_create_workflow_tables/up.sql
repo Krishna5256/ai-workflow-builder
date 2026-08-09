@@ -1,6 +1,6 @@
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
-CREATE TABLE public.organizations (
+CREATE TABLE IF NOT EXISTS public.organizations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   name text NOT NULL,
   quota_allowed integer NOT NULL DEFAULT 100,
@@ -9,7 +9,7 @@ CREATE TABLE public.organizations (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.org_members (
+CREATE TABLE IF NOT EXISTS public.org_members (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   user_id uuid NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE public.org_members (
   UNIQUE (org_id, user_id)
 );
 
-CREATE TABLE public.workflows (
+CREATE TABLE IF NOT EXISTS public.workflows (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id uuid NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   name text NOT NULL,
@@ -27,7 +27,7 @@ CREATE TABLE public.workflows (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.workflow_steps (
+CREATE TABLE IF NOT EXISTS public.workflow_steps (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id uuid NOT NULL REFERENCES public.workflows(id) ON DELETE CASCADE,
   position integer NOT NULL,
@@ -46,7 +46,7 @@ CREATE TABLE public.workflow_steps (
   UNIQUE (workflow_id, position)
 );
 
-CREATE TABLE public.workflow_triggers (
+CREATE TABLE IF NOT EXISTS public.workflow_triggers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id uuid NOT NULL REFERENCES public.workflows(id) ON DELETE CASCADE,
   type text NOT NULL CHECK (
@@ -56,7 +56,7 @@ CREATE TABLE public.workflow_triggers (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE TABLE public.workflow_runs (
+CREATE TABLE IF NOT EXISTS public.workflow_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_id uuid NOT NULL REFERENCES public.workflows(id) ON DELETE CASCADE,
   status text NOT NULL DEFAULT 'pending' CHECK (
@@ -73,7 +73,7 @@ CREATE TABLE public.workflow_runs (
   error text
 );
 
-CREATE TABLE public.step_runs (
+CREATE TABLE IF NOT EXISTS public.step_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   workflow_run_id uuid NOT NULL REFERENCES public.workflow_runs(id) ON DELETE CASCADE,
   workflow_step_id uuid NOT NULL REFERENCES public.workflow_steps(id) ON DELETE CASCADE,
@@ -97,28 +97,28 @@ CREATE TABLE public.step_runs (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_org_members_user_id
+CREATE INDEX IF NOT EXISTS idx_org_members_user_id
   ON public.org_members(user_id);
 
-CREATE INDEX idx_org_members_org_id
+CREATE INDEX IF NOT EXISTS idx_org_members_org_id
   ON public.org_members(org_id);
 
-CREATE INDEX idx_workflows_org_id
+CREATE INDEX IF NOT EXISTS idx_workflows_org_id
   ON public.workflows(org_id);
 
-CREATE INDEX idx_workflow_steps_workflow_id
+CREATE INDEX IF NOT EXISTS idx_workflow_steps_workflow_id
   ON public.workflow_steps(workflow_id);
 
-CREATE INDEX idx_workflow_triggers_workflow_id
+CREATE INDEX IF NOT EXISTS idx_workflow_triggers_workflow_id
   ON public.workflow_triggers(workflow_id);
 
-CREATE INDEX idx_workflow_runs_workflow_id
+CREATE INDEX IF NOT EXISTS idx_workflow_runs_workflow_id
   ON public.workflow_runs(workflow_id);
 
-CREATE INDEX idx_step_runs_workflow_run_id
+CREATE INDEX IF NOT EXISTS idx_step_runs_workflow_run_id
   ON public.step_runs(workflow_run_id);
 
-CREATE VIEW public.organization_usage AS
+CREATE OR REPLACE VIEW public.organization_usage AS
 SELECT
   id AS organization_id,
   name,
