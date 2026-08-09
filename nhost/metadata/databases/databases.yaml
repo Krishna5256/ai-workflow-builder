@@ -11,12 +11,4 @@
         max_connections: 50
         retries: 1
       use_prepared_statements: true
-  tables:
-    - "!include default/tables/public_organizations.yaml"
-    - "!include default/tables/public_org_members.yaml"
-    - "!include default/tables/public_workflows.yaml"
-    - "!include default/tables/public_workflow_steps.yaml"
-    - "!include default/tables/public_workflow_triggers.yaml"
-    - "!include default/tables/public_workflow_runs.yaml"
-    - "!include default/tables/public_step_runs.yaml"
-    - "!include default/tables/public_organization_usage.yaml"
+  tables: "!include default/tables/tables.yaml"
