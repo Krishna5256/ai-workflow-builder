@@ -12,7 +12,7 @@ const GET_WORKFLOW = gql`
       id
       org_id
       name
-      workflow_steps(order_by: {position: asc}) {
+      workflow_steps(order_by: { position: asc }) {
         id
         position
         type
@@ -26,8 +26,8 @@ const GET_MEMBER = gql`
   query GetMember($org_id: uuid!, $user_id: uuid!) {
     org_members(
       where: {
-        org_id: {_eq: $org_id}
-        user_id: {_eq: $user_id}
+        org_id: { _eq: $org_id }
+        user_id: { _eq: $user_id }
       }
       limit: 1
     ) {
@@ -52,7 +52,6 @@ const CREATE_RUN = gql`
       object: {
         workflow_id: $workflow_id
         status: "running"
-        started_at: "now()"
       }
     ) {
       id
@@ -81,7 +80,7 @@ const UPDATE_STEP = gql`
     $attempt_count: Int
   ) {
     update_step_runs_by_pk(
-      pk_columns: {id: $id}
+      pk_columns: { id: $id }
       _set: {
         status: $status
         input: $input
@@ -96,13 +95,9 @@ const UPDATE_STEP = gql`
 `;
 
 const UPDATE_RUN = gql`
-  mutation UpdateRun(
-    $id: uuid!
-    $status: String!
-    $error: String
-  ) {
+  mutation UpdateRun($id: uuid!, $status: String!, $error: String) {
     update_workflow_runs_by_pk(
-      pk_columns: {id: $id}
+      pk_columns: { id: $id }
       _set: {
         status: $status
         completed_at: "now()"
@@ -117,8 +112,8 @@ const UPDATE_RUN = gql`
 const INCREMENT_QUOTA = gql`
   mutation IncrementQuota($id: uuid!) {
     update_organizations_by_pk(
-      pk_columns: {id: $id}
-      _inc: {quota_used: 1}
+      pk_columns: { id: $id }
+      _inc: { quota_used: 1 }
     ) {
       id
       quota_used
@@ -130,10 +125,8 @@ async function callLLM(config, previousOutput) {
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    await new Promise((r) => setTimeout(r, 1200));
-
     return {
-      text: `Stubbed LLM response for: ${
+      text: `Demo LLM response for: ${
         config?.prompt || "workflow step"
       }`,
       stubbed: true,
@@ -148,7 +141,9 @@ async function callLLM(config, previousOutput) {
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
     {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         contents: [
           {
@@ -179,15 +174,13 @@ async function callLLM(config, previousOutput) {
 }
 
 async function callHttp(config) {
-  const url = config?.url;
-
-  if (!url) {
+  if (!config?.url) {
     throw new Error("http_request step requires config.url");
   }
 
   const method = config.method || "GET";
 
-  const response = await fetch(url, {
+  const response = await fetch(config.url, {
     method,
     headers: {
       "Content-Type": "application/json",
@@ -208,7 +201,7 @@ async function callHttp(config) {
   try {
     return JSON.parse(text);
   } catch {
-    return {text};
+    return { text };
   }
 }
 
@@ -221,19 +214,18 @@ async function executeStep(step, previousOutput) {
       return callHttp(step.config);
 
     case "conditional_branch": {
-      const expected = step.config?.equals;
+      const expected = step.config?.equals || "";
       const actual =
         previousOutput?.text ??
         previousOutput?.result ??
         previousOutput;
 
       return {
-        branch:
-          String(actual).toLowerCase().includes(
-            String(expected || "").toLowerCase()
-          )
-            ? "true"
-            : "false",
+        branch: String(actual)
+          .toLowerCase()
+          .includes(String(expected).toLowerCase())
+          ? "true"
+          : "false",
         previous: previousOutput,
       };
     }
@@ -241,13 +233,13 @@ async function executeStep(step, previousOutput) {
     case "db_write":
       return {
         saved: true,
-        message: "db_write handled by workflow backend",
+        message: "Database write step completed",
       };
 
     case "notify":
       return {
         notified: true,
-        message: "Notification event emitted",
+        message: "Notification step completed",
       };
 
     default:
@@ -292,7 +284,7 @@ async function runStep(step, stepRunId, previousOutput) {
       });
 
       if (attempt < 2) {
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
   }
@@ -303,6 +295,7 @@ async function runStep(step, stepRunId, previousOutput) {
 module.exports = async (req, res) => {
   try {
     const userId =
+      req.body?.session_variables?.["x-hasura-user-id"] ||
       req.headers["x-hasura-user-id"] ||
       req.headers["X-Hasura-User-Id"];
 
@@ -320,10 +313,10 @@ module.exports = async (req, res) => {
       });
     }
 
-    const {workflows_by_pk: workflow} = await client.request(
-      GET_WORKFLOW,
-      {id: workflowId}
-    );
+    const { workflows_by_pk: workflow } =
+      await client.request(GET_WORKFLOW, {
+        id: workflowId,
+      });
 
     if (!workflow) {
       return res.status(404).json({
@@ -331,10 +324,11 @@ module.exports = async (req, res) => {
       });
     }
 
-    const {org_members: members} = await client.request(GET_MEMBER, {
-      org_id: workflow.org_id,
-      user_id: userId,
-    });
+    const { org_members: members } =
+      await client.request(GET_MEMBER, {
+        org_id: workflow.org_id,
+        user_id: userId,
+      });
 
     const member = members[0];
 
@@ -344,10 +338,10 @@ module.exports = async (req, res) => {
       });
     }
 
-    const {organizations_by_pk: organization} = await client.request(
-      GET_QUOTA,
-      {id: workflow.org_id}
-    );
+    const { organizations_by_pk: organization } =
+      await client.request(GET_QUOTA, {
+        id: workflow.org_id,
+      });
 
     if (!organization) {
       return res.status(404).json({
@@ -361,10 +355,10 @@ module.exports = async (req, res) => {
       });
     }
 
-    const {insert_workflow_runs_one: run} = await client.request(
-      CREATE_RUN,
-      {workflow_id: workflow.id}
-    );
+    const { insert_workflow_runs_one: run } =
+      await client.request(CREATE_RUN, {
+        workflow_id: workflow.id,
+      });
 
     const stepObjects = workflow.workflow_steps.map((step) => ({
       workflow_run_id: run.id,
@@ -372,13 +366,16 @@ module.exports = async (req, res) => {
       status: "pending",
     }));
 
-    const {insert_step_runs: stepRuns} = await client.request(
-      CREATE_STEP_RUNS,
-      {objects: stepObjects}
-    );
+    const { insert_step_runs: stepRuns } =
+      await client.request(CREATE_STEP_RUNS, {
+        objects: stepObjects,
+      });
 
     const stepRunByStep = new Map(
-      stepRuns.returning.map((sr) => [sr.workflow_step_id, sr.id])
+      stepRuns.returning.map((item) => [
+        item.workflow_step_id,
+        item.id,
+      ])
     );
 
     let previousOutput = null;
@@ -398,14 +395,14 @@ module.exports = async (req, res) => {
           gql`
             mutation PauseRun($id: uuid!) {
               update_workflow_runs_by_pk(
-                pk_columns: {id: $id}
-                _set: {status: "paused"}
+                pk_columns: { id: $id }
+                _set: { status: "paused" }
               ) {
                 id
               }
             }
           `,
-          {id: run.id}
+          { id: run.id }
         );
 
         return res.status(200).json({
